@@ -8,6 +8,7 @@ public class Chat {
 
   public static void main(String[] argv) throws Exception {
     ConnectionFactory factory = new ConnectionFactory();
+    String usuario, destinatario = "0", mensagem = "0";
     factory.setHost("ec2-3-88-85-161.compute-1.amazonaws.com"); // Alterar
     factory.setUsername("zkelvinfps"); // Alterar
     factory.setPassword("0"); // Alterar
@@ -16,11 +17,27 @@ public class Chat {
     Channel channel = connection.createChannel();
     Scanner sc = new Scanner(System.in);
     System.out.print("User: ");
-    String usuario = sc.next();
-    System.out.print(">> ");
-    while(true){
-      String destinatario = sc.next();
-      if ()
+    usuario = sc.next();
+    while(destinatario!="quit"){
+      System.out.print(">> ");
+      destinatario = sc.next();
+      if(destinatario.contains("quit")){
+        System.exit(0);
+      }
+      if (destinatario.charAt(0)=='@'){
+        while (mensagem!="quit"){
+            System.out.print(destinatario + ">> ");
+            mensagem = sc.next();
+            if (mensagem.charAt(0)=='@'){
+                destinatario = mensagem;
+            }else{
+                if(mensagem.contains("quit")){
+                  break;
+                }
+                System.out.println(mensagem);
+            }
+        }
+      }
     }
     String QUEUE_NAME = "minha-fila";
                       //(queue-name, durable, exclusive, auto-delete, params); 
