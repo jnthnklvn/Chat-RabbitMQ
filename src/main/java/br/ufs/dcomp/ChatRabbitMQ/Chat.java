@@ -7,17 +7,21 @@ import java.io.IOException;
 public class Chat {
 
   public static void main(String[] argv) throws Exception {
-    ConnectionFactory factory = new ConnectionFactory();
     String usuario, destinatario = "0", mensagem = "0";
-    factory.setHost("ec2-3-88-85-161.compute-1.amazonaws.com"); // Alterar
-    factory.setUsername("zkelvinfps"); // Alterar
-    factory.setPassword("0"); // Alterar
+    ConnectionFactory factory = new ConnectionFactory();
+    
+    factory.setHost("ec2-3-88-85-161.compute-1.amazonaws.com");
+    factory.setUsername("zkelvinfps");
+    factory.setPassword("0");
     factory.setVirtualHost("/");
+    
     Connection connection = factory.newConnection();
     Channel channel = connection.createChannel();
+    
     Scanner sc = new Scanner(System.in);
     System.out.print("User: ");
     usuario = sc.next();
+    
     while(destinatario!="quit"){
       System.out.print(">> ");
       destinatario = sc.next();
@@ -39,7 +43,8 @@ public class Chat {
         }
       }
     }
-    String QUEUE_NAME = "minha-fila";
+    
+    String QUEUE_NAME = "@"+usuario;
                       //(queue-name, durable, exclusive, auto-delete, params); 
     channel.queueDeclare(QUEUE_NAME, false,   false,     false,       null);
     
