@@ -15,7 +15,8 @@ public class Chat {
   private static final String USERNAME = "zkelvinfps";
   private static final String PASSWORD = "0";
   private static final String VIRTUAL_HOST = "/";
-  private static final String QUEUE_NAME = "minha-fila";
+  private static String usuario = "";
+  private static String destinatario = "";
   private static Channel channel;
 
   private static void createChannel() {
@@ -40,10 +41,10 @@ public class Chat {
   
   private static void declareChannel() {
     try {
-      channel.exchangeDeclare(EXCHANGE_PRIVATE, BuiltinExchangeType.DIRECT);
+      //channel.exchangeDeclare(EXCHANGE_PRIVATE, BuiltinExchangeType.DIRECT);
 
       // (queue-name, durable, exclusive, auto-delete, params);
-      channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+      channel.queueDeclare(usuario.substring(1), false, false, false, null);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -54,13 +55,14 @@ public class Chat {
       public void handleDelivery(String consumerTag, Envelope envelope,
                                  AMQP.BasicProperties properties, byte[] body) throws IOException {
         String message = new String(body, "UTF-8");
-        System.out.println(message);
+        System.out.println("\n"+message);
+        System.out.print(destinatario + ">> ");
       }
     };
 
     try {
       // (queue-name, autoAck, consumer);
-      channel.basicConsume(QUEUE_NAME, true, consumer);
+      channel.basicConsume(usuario.substring(1), true, consumer);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -76,7 +78,7 @@ public class Chat {
 
   private static void addUserGroup(String USER_NAME, String GROUP_NAME) {
     try {
-      channel.queueBind(QUEUE_NAME, GROUP_NAME, USER_NAME);
+      channel.queueBind(usuario, GROUP_NAME, USER_NAME);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -102,9 +104,9 @@ public class Chat {
   private static void publishChannel(String destinatario, String msg) {
     try {
       if (destinatario.charAt(0)=='@'){
-        channel.basicPublish(EXCHANGE_PRIVATE, destinatario, null, msg.getBytes());
+        channel.basicPublish("", destinatario.substring(1), null, msg.getBytes());
       }else{
-        channel.basicPublish(EXCHANGE_GROUP, destinatario, null, msg.getBytes());
+        channel.basicPublish(EXCHANGE_GROUP, destinatario.substring(1), null, msg.getBytes());
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -114,12 +116,11 @@ public class Chat {
   public static void main(String[] argv) {
     Timestamp timestamp;
 
-    FacadeCreateChannel();
-
     Scanner sc = new Scanner(System.in);
     System.out.print("User: ");
-    String usuario = sc.nextLine();
-    String destinatario = "";
+    usuario = "@" + sc.nextLine().trim();
+    
+    FacadeCreateChannel();
 
     while (true) {
       System.out.print(">> ");
@@ -148,11 +149,11 @@ public class Chat {
           }
           else {
             if (mensagem.contains("quit")) {
-              break;
+              System.exit(0);
             }
 
             timestamp = new Timestamp(System.currentTimeMillis());
-            String txt_msg = "(" + sdf.format(timestamp) + ") " + usuario + " diz: " + mensagem;
+            String txt_msg = "(" + sdf.format(timestamp) + ") " + usuario.substring(1)+ " diz: " + mensagem;
             
             publishChannel(destinatario, txt_msg);
           }
