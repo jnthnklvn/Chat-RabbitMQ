@@ -110,7 +110,7 @@ public class Chat {
       e.printStackTrace();
     }
   }
-
+  
   public static void main(String[] argv) {
     Timestamp timestamp;
 
