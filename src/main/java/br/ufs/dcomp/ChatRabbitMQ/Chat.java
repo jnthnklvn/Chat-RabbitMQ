@@ -9,8 +9,6 @@ import java.text.SimpleDateFormat;
 
 public class Chat {
   private static final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy à's' HH:mm");
-  private static final String EXCHANGE_PRIVATE = "direct";
-  private static final String EXCHANGE_GROUP = "group";
   private static final String HOST = "ec2-3-88-85-161.compute-1.amazonaws.com";
   private static final String USERNAME = "zkelvinfps";
   private static final String PASSWORD = "0";
@@ -55,6 +53,7 @@ public class Chat {
       public void handleDelivery(String consumerTag, Envelope envelope,
                                  AMQP.BasicProperties properties, byte[] body) throws IOException {
         String message = new String(body, "UTF-8");
+        
         System.out.println("\n"+message);
         System.out.print(destinatario + ">> ");
       }
@@ -71,14 +70,18 @@ public class Chat {
   private static void addExchangeChannel(String GROUP_NAME) {
     try {
       channel.exchangeDeclare(GROUP_NAME, BuiltinExchangeType.FANOUT);
+      addUserGroup(usuario, GROUP_NAME);
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
   private static void addUserGroup(String USER_NAME, String GROUP_NAME) {
+    if(USER_NAME.charAt(0)=='@'){
+      USER_NAME = USER_NAME.substring(1);
+    }
     try {
-      channel.queueBind(usuario, GROUP_NAME, USER_NAME);
+      channel.queueBind(USER_NAME, GROUP_NAME, USER_NAME);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -95,24 +98,25 @@ public class Chat {
     if (cmd_list[0].contains("!addGroup")) {
       addExchangeChannel(cmd_list[1]);
       System.out.println("Grupo " + cmd_list[1] + " adicionado"); //teste
-    }else if (cmd_list[0].contains("!addUser")){
+    }
+    else if (cmd_list[0].contains("!addUser")){
       addUserGroup(cmd_list[1], cmd_list[2]);
       System.out.println("Usuario " + cmd_list[1] + " adicionado ao grupo " + cmd_list[2]); //teste
     }
   }
   
-  private static void publishChannel(String destinatario, String msg) {
+  private static void publishChannel(String destinatar, String msg) {
     try {
-      if (destinatario.charAt(0)=='@'){
-        channel.basicPublish("", destinatario.substring(1), null, msg.getBytes());
-      }else{
-        channel.basicPublish(EXCHANGE_GROUP, destinatario.substring(1), null, msg.getBytes());
+      if (destinatar.charAt(0)=='@'){
+        channel.basicPublish("", destinatar.substring(1), null, msg.getBytes());
+      }else if(destinatar.charAt(0)=='#'){
+        channel.basicPublish(destinatar.substring(1), "", null, msg.getBytes());
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
-  
+
   public static void main(String[] argv) {
     Timestamp timestamp;
 
