@@ -4,9 +4,14 @@
 
 Criar uma nova instância EC2 na AWS com o Ubuntu Server 16.04. 
 
-Acessar a instância via ssh.
-
 Instalar o RabbitMQ Server na instância conforme os passos a seguir:
+
+### Passo 0 – Acessar a instância via ssh
+
+```
+chmod 400 <nome da chave>.pem
+ssh -i <nome da chave>.pem ubuntu@<Public DNS da instância>
+```
 
 ### Passo 1 – Ataulizar Ubuntu e Instalar o Erlang
 
@@ -16,8 +21,8 @@ sudo apt-get upgrade
 ```
 
 ```
-wget http://packages.erlang-solutions.com/site/esl/esl-erlang/FLAVOUR_1_general/esl-erlang_20.1-1~ubuntu~xenial_amd64.deb
-sudo dpkg -i esl-erlang_20.1-1\~ubuntu\~xenial_amd64.deb
+wget http://packages.erlang-solutions.com/site/esl/esl-erlang/FLAVOUR_1_general/esl-erlang_21.2.5-1~ubuntu~xenial_amd64.deb
+sudo dpkg -i esl-erlang_21.2.5-1\~ubuntu\~xenial_amd64.deb
 ```
 Pode acontecer um erro de dependência do comando anterior. Instale as dependências com o comando:
 
@@ -28,7 +33,7 @@ sudo apt-get install -f
 E reexecute o comando para instalar o Erlang:
 
 ```
-sudo dpkg -i esl-erlang_20.1-1\~ubuntu\~xenial_amd64.deb
+sudo dpkg -i esl-erlang_21.2.5-1\~ubuntu\~xenial_amd64.deb
 ```
 
 ### Passo 2 – Instalar e Iniciar o RabbitMQ Server

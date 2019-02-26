@@ -8,6 +8,7 @@ public class UserInterface {
     private String user;
     private String receiver;
     private String prompt = ">> ";
+    private final String HOST_URL = "http://ec2-3-82-21-99.compute-1.amazonaws.com:15672/api/";
 
     public UserInterface() {
         this.read = new Scanner(System.in);
@@ -25,7 +26,7 @@ public class UserInterface {
         String commandKey = cmd_list[0];
         String msg;
 
-        if (cmd_list.length<2) {
+        if (!commandKey.equals("listGroups") && cmd_list.length<2) {
             System.out.println("406: Not Acceptable");
         }
         
@@ -65,10 +66,32 @@ public class UserInterface {
                 fileConnection.setReceiver(this.receiver);
 
                 System.out.println("Enviando \"" + cmd_list[1] + "\" para " + this.receiver + "!");
-                
+            
                 Thread thread = new Thread(fileConnection);
                 thread.start();
                 //System.out.println("UserInterface/Iniciar Thread: " + (System.currentTimeMillis() - time));
+                break;
+            case "listGroups":
+                String sJsonKey = "source";
+                String uStr = "queues/%2F/" + this.user + "/bindings?columns=" + sJsonKey;
+                HTTPrequestAPI uHttpAPI = new HTTPrequestAPI(HOST_URL + uStr, sJsonKey);
+
+                uHttpAPI.setPrompt(this.prompt);
+
+                Thread uThread = new Thread(uHttpAPI);
+
+                uThread.start();
+                break;
+            case "listUsers":
+                String dJsonKey = "destination";
+                String gStr = "exchanges/%2F/" + cmd_list[1] + "/bindings/source?columns=" + dJsonKey;
+                HTTPrequestAPI gHttpAPI = new HTTPrequestAPI(HOST_URL + gStr, dJsonKey);
+                
+                Thread gThread = new Thread(gHttpAPI);
+
+                gHttpAPI.setPrompt(this.prompt);
+
+                gThread.start();
                 break;
             default:
                 System.out.println("404: Not Found Command");

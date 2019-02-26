@@ -10,15 +10,14 @@ import java.text.SimpleDateFormat;
 import com.google.protobuf.ByteString;
 
 public class UserConnection implements Runnable{
-    private final String HOST = "ec2-3-88-85-161.compute-1.amazonaws.com";
+    private final String HOST = "ec2-3-82-21-99.compute-1.amazonaws.com";
     private final String USERNAME = "zkelvinfps";
     private final String PASSWORD = "0";
     private final String VIRTUAL_HOST = "/";
-    private final String DOWNLOADS_PATH = "/home/jonathankelvin/Documentos/JavaProjects/chat-em-linha-de-comando-via-rabbitmq/src/main/java/br/ufs/dcomp/";
+    private final String DOWNLOADS_PATH = "/home/jonathankelvin/Documentos/JavaProjects/chat-em-linha-de-comando-via-rabbitmq-jnthnklvn/src/main/java/br/ufs/dcomp/";
 
     private final SimpleDateFormat sdfData = new SimpleDateFormat("dd/MM/yyyy");
     private final SimpleDateFormat sdfHour = new SimpleDateFormat("HH:mm");
-    private Timestamp timestamp;
 
     private String textQueue;
     private String fileQueue;
@@ -166,7 +165,7 @@ public class UserConnection implements Runnable{
 
     public void sendMessageTo(String msg, String receiver, boolean isFile) {
         //long time = System.currentTimeMillis();
-        timestamp = new Timestamp(System.currentTimeMillis());
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
         MensagemProtos.Mensagem.Builder mensagem = MensagemProtos.Mensagem.newBuilder();
         
