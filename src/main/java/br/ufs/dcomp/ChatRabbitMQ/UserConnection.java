@@ -22,16 +22,18 @@ public class UserConnection implements Runnable{
     private String textQueue;
     private String fileQueue;
     private String prompt = ">> ";
+    private MessageInterface messageInterface;
     private Connection connection;
     private Channel channel;
 
     private String receiver;
     private String fileMessage;
 
-    public UserConnection(String usuario) {
+    public UserConnection(MessageInterface messageInterface, String usuario) {
         this.textQueue = usuario;
         this.fileQueue = "f" + usuario;
-
+        this.messageInterface = messageInterface;
+        
         ConnectionFactory factory = new ConnectionFactory();
 
         factory.setHost(HOST);
@@ -94,9 +96,12 @@ public class UserConnection implements Runnable{
                     }
 
                     else {
-                        System.out.println("\n(" + mensagem.getData() + " às " + mensagem.getHora()
-                            + ") " + mensagem.getEmissor() + " diz: " + msg);
-                        System.out.print(prompt);
+                        msg = "(" + mensagem.getData() + " às " + mensagem.getHora()
+                            + ") " + mensagem.getEmissor() + " diz: " + msg;
+                        messageInterface.newMessage(msg);
+                        //System.out.println("\n(" + mensagem.getData() + " às " + mensagem.getHora()
+                        //    + ") " + mensagem.getEmissor() + " diz: " + msg);
+                        //System.out.print(prompt);
                     }
                 }
             }
