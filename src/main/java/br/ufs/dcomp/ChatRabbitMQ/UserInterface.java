@@ -2,7 +2,7 @@ package br.ufs.dcomp.ChatRabbitMQ;
 
 import java.util.Scanner;
 
-public class UserInterface {
+public class UserInterface implements MessageInterface {
     private UserConnection connection;
     private Scanner read;
     private String user;
@@ -18,7 +18,7 @@ public class UserInterface {
 
         System.out.print(this.prompt);
 
-        this.connection = new UserConnection(this.user);
+        this.connection = new UserConnection(this, this.user);
     }
 
     private void tratamentoGrupal(String command) {
@@ -131,5 +131,10 @@ public class UserInterface {
                 break;
             }this.connection.setPrompt(this.prompt);
         }System.out.print(this.prompt);
+    }
+    
+    public void newMessage(String msg){
+        System.out.println("\n" + msg);
+        System.out.print(this.prompt);
     }
 }
