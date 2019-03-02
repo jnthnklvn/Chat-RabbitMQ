@@ -2,14 +2,26 @@ package br.ufs.dcomp.ChatRabbitMQ;
 
 import java.util.Scanner;
 
+/**
+ * Classe para interação com usuário, tratamento de entrada
+ * e direcionamento dos serviços.
+ * @version 1.0
+ * @since Finalização da Etapa 2
+ */
 public class UserInterface implements MessageInterface {
     private UserConnection connection;
+
     private Scanner read;
     private String user;
     private String receiver;
     private String prompt = ">> ";
-    private final String HOST_URL = "http://ec2-3-82-21-99.compute-1.amazonaws.com:15672/api/";
 
+    private final String HOST_URL = "http://ec2-54-152-59-230.compute-1.amazonaws.com:15672/api/";
+
+    /**
+     * Inicializa o scanner de entrada, a conexão com servidor
+     * e apresentação da interface de interação com o usuário.
+     */
     public UserInterface() {
         this.read = new Scanner(System.in);
 
@@ -21,7 +33,12 @@ public class UserInterface implements MessageInterface {
         this.connection = new UserConnection(this, this.user);
     }
 
-    private void tratamentoGrupal(String command) {
+    /**
+     * Recebe um comando, caso o comando seja válido, executa as operações correspondentes
+     * e imprimi o resultado, caso contrário, imprimi uma mensagem de erro para o usuário.
+     * @param command - String com operação - e parâmetros - a ser realizada.
+     */
+    private void dealWithCommand(String command) {
         String[] cmd_list = command.split("\\s+", 3);
         String commandKey = cmd_list[0];
         String msg;
@@ -59,39 +76,29 @@ public class UserInterface implements MessageInterface {
                 System.out.println("Group " + cmd_list[1] + " has been removed.");
                 break;
             case "upload":
-                //long time = System.currentTimeMillis();
-                UserConnection fileConnection = new UserConnection(this.user);
-                
-                fileConnection.setFileMessage(cmd_list[1]);
-                fileConnection.setReceiver(this.receiver);
+                this.connection.setFileMessage(cmd_list[1]);
+                this.connection.setReceiver(this.receiver);
 
                 System.out.println("Enviando \"" + cmd_list[1] + "\" para " + this.receiver + "!");
             
-                Thread thread = new Thread(fileConnection);
+                Thread thread = new Thread(this.connection);
                 thread.start();
-                //System.out.println("UserInterface/Iniciar Thread: " + (System.currentTimeMillis() - time));
                 break;
             case "listGroups":
                 String sJsonKey = "source";
-                String uStr = "queues/%2F/" + this.user + "/bindings?columns=" + sJsonKey;
+                String uStr = "queues/vh/" + this.user + "/bindings?columns=" + sJsonKey;
                 HTTPrequestAPI uHttpAPI = new HTTPrequestAPI(HOST_URL + uStr, sJsonKey);
+                msg = uHttpAPI.getJsonMsg();
 
-                uHttpAPI.setPrompt(this.prompt);
-
-                Thread uThread = new Thread(uHttpAPI);
-
-                uThread.start();
+                System.out.println(msg);
                 break;
             case "listUsers":
                 String dJsonKey = "destination";
-                String gStr = "exchanges/%2F/" + cmd_list[1] + "/bindings/source?columns=" + dJsonKey;
+                String gStr = "exchanges/vh/" + cmd_list[1] + "/bindings/source?columns=" + dJsonKey;
                 HTTPrequestAPI gHttpAPI = new HTTPrequestAPI(HOST_URL + gStr, dJsonKey);
-                
-                Thread gThread = new Thread(gHttpAPI);
+                msg = gHttpAPI.getJsonMsg();
 
-                gHttpAPI.setPrompt(this.prompt);
-
-                gThread.start();
+                System.out.println(msg);
                 break;
             default:
                 System.out.println("404: Not Found Command");
@@ -99,6 +106,10 @@ public class UserInterface implements MessageInterface {
         }
     }
 
+    /**
+     * Lê entrada do usuário, verifica se é válida, se for, realiza a operação
+     * indicada, e atualiza o estado do prompt(indicador de referência do usuário).
+     */
     public void readInput() {
         String input = read.nextLine();
 
@@ -120,7 +131,7 @@ public class UserInterface implements MessageInterface {
                 this.prompt = this.receiver + ">> ";
                 break;
             case '!':
-                this.tratamentoGrupal(input.substring(1));
+                this.dealWithCommand(input.substring(1));
                 break;
             default:
                 if(this.prompt.equals(">> ")){
@@ -129,10 +140,14 @@ public class UserInterface implements MessageInterface {
                     this.connection.sendMessageTo(input, this.receiver, false);
                 }
                 break;
-            }this.connection.setPrompt(this.prompt);
+            }
         }System.out.print(this.prompt);
     }
     
+    /**
+     * Imprimi uma mensagem e o estado do prompt em seguida.
+     * @param msg - String com a msg a ser impressa.
+     */
     public void newMessage(String msg){
         System.out.println("\n" + msg);
         System.out.print(this.prompt);

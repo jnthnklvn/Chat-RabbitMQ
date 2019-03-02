@@ -27,36 +27,34 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class HTTPrequestAPI implements Runnable{
+/**
+ * Classe para conexões e requisições de dados de grupos e usuários
+ * através do protocolo HTTP e do Json para o tratamento do retorno.
+ * @version 1.0
+ * @since Finalização da Etapa 5
+ */
+public class HTTPrequestAPI{
     private String URL;
-    private String source;
-    private String prompt;
+    private String keyJson;
 
     private final String USERNAME = "zkelvinfps";
     private final String PASSWORD = "0";
 
-    public HTTPrequestAPI(String URL, String source){
+    /**
+     * Método construtor responsável por inicializar as váriaveis de
+     * URL e chave de busca para objetos Json.
+     * @param URL - String com endereço pra requisição.
+     * @param keyJson - String com campo que deve ser retornaod do Json.
+     */
+    public HTTPrequestAPI(String URL, String keyJson){
         this.URL = URL;
-        this.source = source;
+        this.keyJson = keyJson;
     }
 
-    public void getJSON(String in) {
-        JSONArray jArr = new JSONArray(in);
-        JSONObject jObj = jArr.getJSONObject(0);
-        String emptyTest = jObj.getString(this.source);
-        String msg = emptyTest;
-
-        for (int i = 1; i < jArr.length(); i++) {
-            jObj = jArr.getJSONObject(i);
-            msg += ", " + jObj.getString(this.source);
-        }
-        if (emptyTest.isEmpty()){
-            msg = msg.substring(2);
-        }
-        System.out.println("\n" + msg);
-        System.out.print(this.prompt);
-    }
-
+    /**
+     * Faz uma requisição HTTP, atribui a um Stream, escreve conteúdo do Stream numa String.
+     * @return inputLine - String com conteúdo da requisição.
+     */
     public String URLFetch() {
         String inputLine = "";
         try {
@@ -68,15 +66,14 @@ public class HTTPrequestAPI implements Runnable{
             AuthCache authCache = new BasicAuthCache();
             CredentialsProvider credsProvider = new BasicCredentialsProvider();
 
-            credsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
+            credsProvider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials(this.USERNAME, this.PASSWORD));
             authCache.put(targetHost, new BasicScheme());
             context.setCredentialsProvider(credsProvider);
             context.setAuthCache(authCache);
 
-            // Get the response
             CloseableHttpResponse response = httpClient.execute(targetHost, httpget, context);
 
-            // Get the data
             HttpEntity entity = response.getEntity();
             BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             
@@ -86,23 +83,33 @@ public class HTTPrequestAPI implements Runnable{
             httpClient.close();
         } catch (MalformedURLException | UnsupportedEncodingException e) {
             e.printStackTrace();
-        } catch (ClientProtocolException e1) {
-            e1.printStackTrace();
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }return inputLine;
     }
 
-    @Override
-    public void run() {
-        String msg = this.URLFetch();
-        this.getJSON(msg);
-    }
-
     /**
-     * @param prompt the prompt to set
+     * Chama um método para fazer a requisição HTTP, atribui o retorno a uma String,
+     * cria um Array Json a partir da dessa String e, por fim, varre o Array adicionando
+     * o campo keyJson de cada objeto para compor uma mensagem a ser enviada ao usuário.
+     * @return msg - String com conteúdo da operação solicitada.
      */
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
+    public String getJsonMsg() {
+        String in = this.URLFetch();
+        JSONArray jArr = new JSONArray(in);
+        JSONObject jObj = jArr.getJSONObject(0);
+        String emptyTest = jObj.getString(this.keyJson);
+        String msg = emptyTest;
+
+        for (int i = 1; i < jArr.length(); i++) {
+            jObj = jArr.getJSONObject(i);
+            msg += ", " + jObj.getString(this.keyJson);
+        }
+        if (emptyTest.isEmpty()){
+            msg = msg.substring(2);
+        }
+        return msg;
     }
 }
