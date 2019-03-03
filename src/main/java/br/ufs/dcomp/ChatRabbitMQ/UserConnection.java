@@ -49,6 +49,22 @@ public class UserConnection implements Runnable {
     }
 
     /**
+     * Método construtor especifico para o envio de arquivos.
+     * @param messageInterface - MessageInterface para envio de mensagens ao usuário.
+     * @param usuario - String usada para nomear as filas de mensagens.
+     */
+    public UserConnection(MessageInterface messageInterface, String usuario, Connection connection) {
+        this.textQueue = usuario;
+        this.messageInterface = messageInterface;
+        try{
+            this.channel = connection.createChannel();
+            this.channel.queueDeclare("f" + usuario, false, false, false, null);
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Método responsável por inicializar a conexão com servidor e chamar os métodos
      * para criação e cosumo dos canais de mensagens.
      */
@@ -275,6 +291,8 @@ public class UserConnection implements Runnable {
     @Override
     public void run() {
         sendMessageTo(this.fileMessage, this.receiver, true);
+        String msg = "Arquivo \"" + this.fileMessage + "\" foi enviado para " + this.receiver;
+        messageInterface.newMessage(msg);
     }
 
     /** Altera o destinátario atual das mensagens.
@@ -289,5 +307,12 @@ public class UserConnection implements Runnable {
      */
     public void setFileMessage(String fileMessage) {
         this.fileMessage = fileMessage;
+    }
+
+    /** Retorna o objeto de conexão
+     * @return connection - Connection com o servidor
+     */
+    public Connection getCon() {
+        return this.connection;
     }
 }

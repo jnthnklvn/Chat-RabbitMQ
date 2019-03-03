@@ -10,6 +10,7 @@ import java.util.Scanner;
  */
 public class UserInterface implements MessageInterface {
     private UserConnection connection;
+    private UserConnection fConnection;
 
     private Scanner read;
     private String user;
@@ -31,6 +32,7 @@ public class UserInterface implements MessageInterface {
         System.out.print(this.prompt);
 
         this.connection = new UserConnection(this, this.user);
+        this.fConnection = new UserConnection(this, this.user, this.connection.getCon());
     }
 
     /**
@@ -76,12 +78,12 @@ public class UserInterface implements MessageInterface {
                 System.out.println("Group " + cmd_list[1] + " has been removed.");
                 break;
             case "upload":
-                this.connection.setFileMessage(cmd_list[1]);
-                this.connection.setReceiver(this.receiver);
+                fConnection.setFileMessage(cmd_list[1]);
+                fConnection.setReceiver(this.receiver);
 
                 System.out.println("Enviando \"" + cmd_list[1] + "\" para " + this.receiver + "!");
             
-                Thread thread = new Thread(this.connection);
+                Thread thread = new Thread(fConnection);
                 thread.start();
                 break;
             case "listGroups":
