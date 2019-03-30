@@ -1,10 +1,7 @@
 package br.ufs.dcomp.ChatRabbitMQ;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.apache.http.HttpEntity;
@@ -12,7 +9,6 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -81,11 +77,7 @@ public class HTTPrequestAPI{
 
             EntityUtils.consume(entity);
             httpClient.close();
-        } catch (MalformedURLException | UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }return inputLine;
     }
@@ -107,6 +99,7 @@ public class HTTPrequestAPI{
             jObj = jArr.getJSONObject(i);
             msg += ", " + jObj.getString(this.keyJson);
         }
+        
         if (emptyTest.isEmpty()){
             msg = msg.substring(2);
         }

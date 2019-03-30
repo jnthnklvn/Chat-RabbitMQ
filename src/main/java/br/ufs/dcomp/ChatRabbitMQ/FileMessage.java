@@ -42,33 +42,17 @@ public class FileMessage {
      * @return dataAsByte - Array de bytes com representação do arquivo.
      */
     public byte[] getFileBytes() {
-        BufferedInputStream bis;
         byte[] dataAsByte = null;
+        File file = new File(filePath);
         
         try {
             FileInputStream inputstream = new FileInputStream(this.filePath);
-            int x = 0;
-            inputstream.mark(8192*8192);//limite//8192*8192//64MB
-
-            while(inputstream.read()!=-1){
-                x += 1;
-            }
-
-            dataAsByte = new byte[x];
-            
-            if(inputstream.markSupported()){
-                inputstream.reset();
-            }else{
-                inputstream.close();
-                inputstream = new FileInputStream(this.filePath);
-            }
+            dataAsByte = new byte[(int)file.length()];
 
             while(inputstream.read(dataAsByte) != -1);
             
             inputstream.close();
             
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -81,16 +65,10 @@ public class FileMessage {
      * @param fileName - String com o nome do arquivo (incluindo o caminho).
      */
     public void downloadFile(byte[] buf, String fileName) {
-        File file = new File(filePath);
         FileOutputStream fos = null;
 
         try {
-            fos = new FileOutputStream(file + "/" + fileName);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        try {
+            fos = new FileOutputStream(this.filePath + "/" + fileName);
             fos.write(buf, 0, buf.length);
             fos.flush();
             fos.close();

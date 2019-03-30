@@ -10,14 +10,14 @@ import java.util.Scanner;
  */
 public class UserInterface implements MessageInterface {
     private UserConnection connection;
-    private UserConnection fConnection;
+    //private UserConnection fConnection;
 
     private Scanner read;
     private String user;
     private String receiver;
     private String prompt = ">> ";
 
-    private final String HOST_URL = "http://ec2-54-152-59-230.compute-1.amazonaws.com:15672/api/";
+    private final String HOST_URL = "http://chathttpbalancer-1406853435.us-east-1.elb.amazonaws.com:80/api/";
 
     /**
      * Inicializa o scanner de entrada, a conexão com servidor
@@ -32,7 +32,7 @@ public class UserInterface implements MessageInterface {
         System.out.print(this.prompt);
 
         this.connection = new UserConnection(this, this.user);
-        this.fConnection = new UserConnection(this, this.user, this.connection.getCon());
+        //this.fConnection = new UserConnection(this, this.user, this.connection.getCon());
     }
 
     /**
@@ -56,7 +56,6 @@ public class UserInterface implements MessageInterface {
 
                 System.out.println("Group " + cmd_list[1] + " created.");
                 break;
-
             case "addUser":
                 this.connection.addUserGroup(cmd_list[1], cmd_list[2]);
             
@@ -64,7 +63,6 @@ public class UserInterface implements MessageInterface {
             
                 this.connection.sendMessageTo(msg, "#" + cmd_list[2], false);
                 break;
-
             case "delFromGroup":
                 this.connection.delUserGroup(cmd_list[1], cmd_list[2]);
             
@@ -78,13 +76,9 @@ public class UserInterface implements MessageInterface {
                 System.out.println("Group " + cmd_list[1] + " has been removed.");
                 break;
             case "upload":
-                fConnection.setFileMessage(cmd_list[1]);
-                fConnection.setReceiver(this.receiver);
-
+                connection.sendMessageTo(cmd_list[1], this.receiver, true);
+                
                 System.out.println("Enviando \"" + cmd_list[1] + "\" para " + this.receiver + "!");
-            
-                Thread thread = new Thread(fConnection);
-                thread.start();
                 break;
             case "listGroups":
                 String sJsonKey = "source";

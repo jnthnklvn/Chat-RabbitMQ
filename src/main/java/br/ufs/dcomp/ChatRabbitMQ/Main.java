@@ -4,7 +4,7 @@ package br.ufs.dcomp.ChatRabbitMQ;
  * Classe principal, responsável por manter a
  * interação até que o usuário solicite a parada.
  * @version 1.0
- * @since Finalização da Etapa 2
+ * @since 2019-02-22
  */
 public class Main {
   

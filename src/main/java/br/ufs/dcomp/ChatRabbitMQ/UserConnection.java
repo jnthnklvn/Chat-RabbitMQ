@@ -14,12 +14,12 @@ import com.google.protobuf.ByteString;
  * @version 1.0
  * @since Finalização da Etapa 2
  */
-public class UserConnection implements Runnable {
-    private final String HOST = "ec2-54-152-59-230.compute-1.amazonaws.com";
+public class UserConnection {
+    private final String HOST = "chatbalancer-cf137ff491b1e08c.elb.us-east-1.amazonaws.com";
     private final String USERNAME = "zkelvinfps";
     private final String PASSWORD = "0";
     private final String VIRTUAL_HOST = "vh";
-    private final String DOWNLOADS_PATH = "/home/jonathankelvin/Documentos/";
+    private final String DOWNLOADS_PATH = "downloads/";
 
     private final SimpleDateFormat sdfData = new SimpleDateFormat("dd/MM/yyyy");
     private final SimpleDateFormat sdfHour = new SimpleDateFormat("HH:mm");
@@ -28,11 +28,10 @@ public class UserConnection implements Runnable {
     private ConnectionFactory factory;
     private Connection connection;
     private Channel channel;
+    private Channel fileChannel;
 
     private String textQueue;
     private String fileQueue;
-    private String receiver;
-    private String fileMessage;
 
     /**
      * Método construtor responsável por inicializar as váriaveis de
@@ -49,24 +48,8 @@ public class UserConnection implements Runnable {
     }
 
     /**
-     * Método construtor especifico para o envio de arquivos.
-     * @param messageInterface - MessageInterface para envio de mensagens ao usuário.
-     * @param usuario - String usada para nomear as filas de mensagens.
-     */
-    public UserConnection(MessageInterface messageInterface, String usuario, Connection connection) {
-        this.textQueue = usuario;
-        this.messageInterface = messageInterface;
-        try{
-            this.channel = connection.createChannel();
-            this.channel.queueDeclare("f" + usuario, false, false, false, null);
-        }catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * Método responsável por inicializar a conexão com servidor e chamar os métodos
-     * para criação e cosumo dos canais de mensagens.
+     * para criação e consumo dos canais de mensagens e aquivos.
      */
     private void doConnection() {
         factory = new ConnectionFactory();
@@ -79,11 +62,10 @@ public class UserConnection implements Runnable {
         try {
             this.connection = factory.newConnection();
             this.channel = connection.createChannel();
+            this.fileChannel = connection.createChannel();
             this.declareChannel();
             this.consumeChannel();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
+        } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
     }
@@ -95,7 +77,7 @@ public class UserConnection implements Runnable {
     private void declareChannel() {
         try {
             this.channel.queueDeclare(textQueue, false, false, false, null);
-            this.channel.queueDeclare(fileQueue, false, false, false, null);
+            this.fileChannel.queueDeclare(fileQueue, false, false, false, null);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -111,9 +93,10 @@ public class UserConnection implements Runnable {
         MensagemProtos.Mensagem mensagem = MensagemProtos.Mensagem.parseFrom(body);
         String tipo = mensagem.getConteudo().getTipo();
         String msg = "";
-        String emissor = mensagem.getEmissor().split("#")[0];
+        String emissor = mensagem.getEmissor();
+        String selfEmissor = emissor.split("#")[0];
 
-        if (emissor.equals(this.textQueue) || emissor.equals(this.fileQueue));
+        if (selfEmissor.equals(this.textQueue) || selfEmissor.equals(this.fileQueue));
 
         else if (tipo.contains(".")) {
             byte[] arquivo = mensagem.getConteudo().getCorpo().toByteArray();
@@ -159,10 +142,25 @@ public class UserConnection implements Runnable {
                 }
             }
         };
+        
+        Consumer fileConsumer = new DefaultConsumer(this.fileChannel) {
+            public void handleDelivery(String consumerTag, Envelope envelope,
+                                       AMQP.BasicProperties properties,
+                                       byte[] body) {
+                try{
+                    String msg = receiveMessage(body);
+                    if (!msg.isEmpty()){
+                        messageInterface.newMessage(msg);
+                    }
+                }catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
 
         try {
             this.channel.basicConsume(this.textQueue, false, consumer);
-            this.channel.basicConsume(this.fileQueue, false, consumer);
+            this.fileChannel.basicConsume(this.fileQueue, false, fileConsumer);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -176,6 +174,7 @@ public class UserConnection implements Runnable {
     public void addExchangeChannel(String groupName, String userName) {
         try {
             this.channel.exchangeDeclare(groupName, BuiltinExchangeType.FANOUT);
+            this.fileChannel.exchangeDeclare("f" + groupName, BuiltinExchangeType.FANOUT);
             this.addUserGroup(userName, groupName);
         } catch (IOException e) {
             e.printStackTrace();
@@ -192,6 +191,7 @@ public class UserConnection implements Runnable {
         }
         try {
             this.channel.queueBind(userName, groupName, userName);
+            this.fileChannel.queueBind("f" + userName, "f" + groupName, "f" + userName);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -207,6 +207,7 @@ public class UserConnection implements Runnable {
         }
         try {
             this.channel.queueUnbind(userName, groupName, userName);
+            this.fileChannel.queueUnbind("f" + userName, "f" + groupName, "f" + userName);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -218,6 +219,7 @@ public class UserConnection implements Runnable {
     public void delExchangeChannel(String groupName) {
         try {
             this.channel.exchangeDelete(groupName);
+            this.fileChannel.exchangeDelete("f" + groupName);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -230,8 +232,15 @@ public class UserConnection implements Runnable {
     private void publishChannel(String receiver, byte[] msg) {
         try {
             if (receiver.charAt(0) == '@') {
+                if (receiver.charAt(1) == 'f'){
+                    this.fileChannel.basicPublish("", receiver.substring(1), null, msg);
+                }else
                 this.channel.basicPublish("", receiver.substring(1), null, msg);
-            } else if (receiver.charAt(0) == '#') {
+            } 
+            else if (receiver.charAt(0) == '#') {
+                if (receiver.charAt(1) == 'f'){
+                    this.fileChannel.basicPublish(receiver.substring(1), "", null, msg);
+                }else
                 this.channel.basicPublish(receiver.substring(1), "", null, msg);
             }
         } catch (IOException e) {
@@ -261,19 +270,28 @@ public class UserConnection implements Runnable {
         MensagemProtos.Conteudo.Builder conteudo = MensagemProtos.Conteudo.newBuilder();
 
         if (isFile) {
-            String[] list_add = msg.split("/");
-            FileMessage fMessage = new FileMessage(msg);
+            new Thread() {
+            @Override
+            public void run() {
+                String[] list_add = msg.split("/");
+                FileMessage fMessage = new FileMessage(msg);
+                String tReceiver = receiver.charAt(0) + "f" + receiver.substring(1);
+            
+                conteudo.setTipo(list_add[list_add.length - 1]);
+                conteudo.setCorpo(ByteString.copyFrom(fMessage.getFileBytes()));
+                mensagem.setConteudo(conteudo.build());
 
-            conteudo.setTipo(list_add[list_add.length - 1]);
-            conteudo.setCorpo(ByteString.copyFrom(fMessage.getFileBytes()));
-
+                publishChannel(tReceiver, mensagem.build().toByteArray());
+                messageInterface.newMessage("Arquivo \"" + msg + "\" foi enviado para " + receiver);
+            }
+}.start();
         } else {
             conteudo.setTipo("text/plain");
             conteudo.setCorpo(ByteString.copyFrom(msg.getBytes()));
-        }
-        mensagem.setConteudo(conteudo.build());
+            mensagem.setConteudo(conteudo.build());
 
-        publishChannel(receiver, mensagem.build().toByteArray());
+            publishChannel(receiver, mensagem.build().toByteArray());
+        }
     }
 
     /** 
@@ -286,33 +304,5 @@ public class UserConnection implements Runnable {
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void run() {
-        sendMessageTo(this.fileMessage, this.receiver, true);
-        String msg = "Arquivo \"" + this.fileMessage + "\" foi enviado para " + this.receiver;
-        messageInterface.newMessage(msg);
-    }
-
-    /** Altera o destinátario atual das mensagens.
-     * @param receiver - String a sobrescrever.
-     */
-    public void setReceiver(String receiver) {
-        this.receiver = receiver;
-    }
-
-    /** Altera o arquivo de mensagem atual.
-     * @param fileMessage - String a sobrescever.
-     */
-    public void setFileMessage(String fileMessage) {
-        this.fileMessage = fileMessage;
-    }
-
-    /** Retorna o objeto de conexão
-     * @return connection - Connection com o servidor
-     */
-    public Connection getCon() {
-        return this.connection;
     }
 }
